@@ -5,39 +5,70 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
+    name: Deploy to AWS EC2
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Deploy to EC2
+      - name: Deploy to EC2 using SSH
         uses: appleboy/ssh-action@v1.2.0
+
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PORT: ${{ secrets.PORT }}
+
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+
           envs: MONGO_URI,PORT
-          command_timeout: 15m
+
           timeout: 2m
+          command_timeout: 15m
+
           script: |
             set -eu
 
             PROJECT_DIR="/home/ubuntu/docker_practice"
+
+            echo "=================================="
+            echo "Starting EC2 deployment"
+            echo "=================================="
+
             cd "$PROJECT_DIR"
+
+            echo "Checking current directory..."
+            pwd
+
+            echo "Checking Git status..."
+            git status --short
 
             echo "Updating source code..."
             git pull --ff-only origin main
 
+            echo "Checking Docker Compose..."
+            docker compose version
+
             echo "Building and starting containers..."
             docker compose up -d --build --remove-orphans
 
-            echo "Checking deployment..."
+            echo "Checking container status..."
             docker compose ps
 
-            echo "Deployment completed."
+            echo "Checking running containers..."
+            docker ps
+
+            echo "=================================="
+            echo "Deployment completed successfully"
+            echo "=================================="
+
