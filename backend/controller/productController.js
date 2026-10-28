@@ -36,7 +36,7 @@ async function addProduct(req, res) {
     const product = await Product.create({ name, price, stock });
     res.status(201).json(product);
   } catch (error) {
-    res.status(500).json({ error: "Failed to add product" });
+    res.status(500).json({ error: "Failed   ,. .,to add product" });
   }
 }
 

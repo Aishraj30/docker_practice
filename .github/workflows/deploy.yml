@@ -5,18 +5,25 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
+
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PORT: ${{ secrets.PORT }}
+
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -25,6 +32,7 @@ jobs:
           envs: MONGO_URI,PORT
           command_timeout: 15m
           timeout: 2m
+
           script: |
             set -eu
 
@@ -34,10 +42,17 @@ jobs:
             echo "Updating source code..."
             git pull --ff-only origin main
 
-            echo "Building and starting containers..."
-            docker compose up -d --build --remove-orphans
+            echo "Checking Docker..."
+            sudo docker --version
+            sudo docker compose version
 
-            echo "Checking deployment..."
-            docker compose ps
+            echo "Building and starting containers..."
+            sudo docker compose up -d --build --remove-orphans
+
+            echo "Checkinmg deployment..."
+            sudo docker compose ps
+
+            echo "Checking recent logs..."
+            sudo docker compose logs --tail=30
 
             echo "Deployment completed."
