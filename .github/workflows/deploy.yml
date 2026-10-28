@@ -1,53 +1,46 @@
-name : Deploying the first project 
 
-on :
-    push:
-        branches:
-            - main
-            workflow_dispatch:
+name: Deploying the first project
 
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-jobs :
-    deploy:
-        runs-on: ubuntu-latest
-        
-        steps:
-            - name: deploy to ec2 
-            uses: appleboy/ssh-action@v1.2.0
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-            env:
-                MONG0_URI:${{secrets.MONGO_URI}}
-                PORT:${{secrets.PORT}}
-            with:
-                host:${{secrets.EC2_HOST}}
-                username:${{secrets.EC2_USERNAME}}
-                key:${{secrets.EC2_SSH_KEY}}
-                port:22
-                envs:MONGO_URI,PORT
-                
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
 
-                command_timeout: 15m
-                timeout:2m
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          PORT: ${{ secrets.PORT }}
 
-                scripts : |
-                set -eu
-                
-                PROJECT_DIR="/home/ubuntu/docker_practice"
-                cd "$PROJECT_DIR"
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          envs: MONGO_URI,PORT
+          command_timeout: 15m
+          timeout: 2m
 
-                echo "updating source code"
+          script: |
+            set -eu
 
-                git pull --ff-only origin main
+            PROJECT_DIR="/home/ubuntu/docker_practice"
+            cd "$PROJECT_DIR"
 
-                echo "building and starting caoontianers"
+            echo "Updating source code..."
+            git pull --ff-only origin main
 
-                docker compose up -d --build --remove-orphans
+            echo "Building and starting containers..."
+            docker compose up -d --build --remove-orphans
 
-                echo "checking deployemnt"
+            echo "Checking deployment..."
+            docker compose ps
 
-                docker compose up
-
-                echo "deplyment completed"
-
-
-                
+            echo "Deployment completed."
