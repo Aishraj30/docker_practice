@@ -55,7 +55,7 @@ async function deleteProduct(req, res) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    res.json({ message: "Product deleted successfully" });
+    res.json({ message: "Product yesss deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete product" });
   }

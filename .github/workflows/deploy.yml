@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -17,19 +16,22 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Deploy to EC2
+      - name: Build, Push and Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
 
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PORT: ${{ secrets.PORT }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          IMAGE_TAG: ${{ github.sha }}
 
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          envs: MONGO_URI,PORT
+          envs: MONGO_URI,PORT,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,IMAGE_TAG
           command_timeout: 15m
           timeout: 2m
 
@@ -46,13 +48,41 @@ jobs:
             sudo docker --version
             sudo docker compose version
 
-            echo "Building and starting containers..."
-            sudo docker compose up -d --build --remove-orphans
+            echo "Logging in to Docker Hub..."
+            printf '%s' "$DOCKERHUB_TOKEN" |
+              sudo docker login \
+                --username "$DOCKERHUB_USERNAME" \
+                --password-stdin
 
-            echo "Checkinmg deployment..."
+            echo "Building application images on EC2..."
+            sudo docker compose build frontend backend
+
+            echo "Tagging images..."
+            sudo docker tag docker_practice-frontend:latest \
+              "$DOCKERHUB_USERNAME/frontend:$IMAGE_TAG"
+            sudo docker tag docker_practice-backend:latest \
+              "$DOCKERHUB_USERNAME/backend:$IMAGE_TAG"
+
+            sudo docker tag docker_practice-frontend:latest \
+              "$DOCKERHUB_USERNAME/frontend:latest"
+            sudo docker tag docker_practice-backend:latest \
+              "$DOCKERHUB_USERNAME/backend:latest"
+
+            echo "Pushing images to Docker Hub..."
+            sudo docker push "$DOCKERHUB_USERNAME/frontend:$IMAGE_TAG"
+            sudo docker push "$DOCKERHUB_USERNAME/backend:$IMAGE_TAG"
+            sudo docker push "$DOCKERHUB_USERNAME/frontend:latest"
+            sudo docker push "$DOCKERHUB_USERNAME/backend:latest"
+
+            echo "Deploying application..."
+            sudo docker compose up -d --remove-orphans
+
+            echo "Checking deployment..."
             sudo docker compose ps
 
             echo "Checking recent logs..."
             sudo docker compose logs --tail=30
+
+            sudo docker logout
 
             echo "Deployment completed."
