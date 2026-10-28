@@ -3,8 +3,8 @@ name : Deploying the first project
 on :
     push:
         branches:
-            - main
-     workflow_dispatch:
+            - maiin
+            workflow_dispatch
 
 
 jobs :
