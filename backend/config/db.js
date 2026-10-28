@@ -9,7 +9,7 @@ async function connectDB() {
   }
 
   await mongoose.connect(mongoURI);
-  console.log("MongoDB connected successfully");
+  console.log("MongoDB connectedzxx successfully");
 }
 
 module.exports = connectDB;
