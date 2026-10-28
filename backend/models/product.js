@@ -19,7 +19,7 @@ const productSchema = new mongoose.Schema(
       min: 0,
       validate: {
         validator: Number.isInteger,
-        message: "Stock must be an integer",
+        message: "Stock  jkknkj must be an integer",
       },
     },
   },
